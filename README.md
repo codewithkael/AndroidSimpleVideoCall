@@ -1,4 +1,4 @@
-# Simple Video Call Using WebRTC - Android Application – Complete Guide  
+# Simple Video Call Application Using WebRTC (Android) – Complete Guide  
 
 This project demonstrates how to build a simple video call application using the **WebRTC protocol**. The system consists of three main components:  
 
