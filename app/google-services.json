@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1025646425185",
+    "project_id": "call-notificaton",
+    "storage_bucket": "call-notificaton.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1025646425185:android:9d31d5ec1733ed8844e620",
+        "android_client_info": {
+          "package_name": "com.codewithkael.simplecall"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDOm-bG9s56oKbwcegSUFXI_NQqMGV0_no"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

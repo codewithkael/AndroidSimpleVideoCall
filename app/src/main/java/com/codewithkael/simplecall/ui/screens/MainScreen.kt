@@ -2,9 +2,11 @@ package com.codewithkael.simplecall.ui.screens
 
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -38,6 +40,7 @@ import com.codewithkael.simplecall.ui.viewmodel.MainViewModel
 import com.codewithkael.simplecall.utils.ConnectionState
 import com.codewithkael.simplecall.utils.SimpleCallApplication
 
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
 fun MainScreen() {
     val viewModel: MainViewModel = hiltViewModel()
@@ -59,11 +62,16 @@ fun MainScreen() {
 
 
     LaunchedEffect(Unit) {
-        requestPermissionLauncher.launch(
-            arrayOf(
-                android.Manifest.permission.RECORD_AUDIO, android.Manifest.permission.CAMERA
-            )
-        )
+        val permissions = mutableListOf<String>().apply {
+            add(android.Manifest.permission.RECORD_AUDIO)
+            add(android.Manifest.permission.CAMERA)
+            // Only add POST_NOTIFICATIONS on Android 13 (API 33) and above
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                add(android.Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+
+        requestPermissionLauncher.launch(permissions.toTypedArray())
     }
 
     LaunchedEffect(Unit) {

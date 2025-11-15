@@ -12,6 +12,11 @@ class SignallingClient @Inject constructor(
     fun findUser(target:String){
         socketClient.sendDataToHost(
             SignalMessageModel(
+                type = SignalMessageType.SendCallNotification, sender = SimpleCallApplication.USER_ID,target = target
+            )
+        )
+        socketClient.sendDataToHost(
+            SignalMessageModel(
                 type = SignalMessageType.FindUser,
                 sender = SimpleCallApplication.USER_ID,
                 target = target
@@ -20,6 +25,11 @@ class SignallingClient @Inject constructor(
     }
 
     fun sendStartCallSignal(target: String) {
+        socketClient.sendDataToHost(
+            SignalMessageModel(
+                type = SignalMessageType.SendCallNotification, sender = SimpleCallApplication.USER_ID,target = target
+            )
+        )
         socketClient.sendDataToHost(
             SignalMessageModel(
                 type = SignalMessageType.StartCall, sender = SimpleCallApplication.USER_ID,target = target

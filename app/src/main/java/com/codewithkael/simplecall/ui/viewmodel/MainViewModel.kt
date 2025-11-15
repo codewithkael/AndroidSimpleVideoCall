@@ -2,6 +2,7 @@ package com.codewithkael.simplecall.ui.viewmodel
 
 import android.annotation.SuppressLint
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.codewithkael.simplecall.remote.socket.SignalMessageModel
@@ -28,8 +29,12 @@ import com.codewithkael.simplecall.webrtc.RTCAudioManager
 import com.codewithkael.simplecall.webrtc.RTCClient
 import com.codewithkael.simplecall.webrtc.RTCClientImpl
 import com.codewithkael.simplecall.webrtc.WebRTCFactory
+import com.google.firebase.Firebase
+import com.google.firebase.messaging.messaging
 import com.google.gson.Gson
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -68,22 +73,33 @@ class MainViewModel @Inject constructor(
     }
 
     fun connectSocket() {
-        socketClient.init(getWebSocketUrl(SimpleCallApplication.USER_ID),
-            object : SocketClient.SocketCallback {
-                override fun onRemoteSocketClientOpened() {
-                    setConnectionState(WaitingForCall)
-                }
+        Firebase.messaging.token.addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                val token = task.result
+                Log.d("Masoud TAG", "connectSocket: FCM Token: $token")
+                // send token to your server
+                CoroutineScope(Dispatchers.IO).launch {
+                    try {
+                        socketClient.init(getWebSocketUrl(username = SimpleCallApplication.USER_ID,token=token),
+                            object : SocketClient.SocketCallback {
+                                override fun onRemoteSocketClientOpened() {
+                                    setConnectionState(WaitingForCall)
+                                }
 
-                override fun onRemoteSocketClientClosed() {
-                }
+                                override fun onRemoteSocketClientClosed() {
+                                }
 
-                override fun onRemoteSocketClientConnectionError(e: Exception?) {
-                }
+                                override fun onRemoteSocketClientConnectionError(e: Exception?) {
+                                }
 
-                override fun onRemoteSocketClientNewMessage(message: SignalMessageModel) {
-                    handleIncomingMessage(message)
+                                override fun onRemoteSocketClientNewMessage(message: SignalMessageModel) {
+                                    handleIncomingMessage(message)
+                                }
+                            })
+                    } catch (e: Exception) { /* handle */ }
                 }
-            })
+            }
+        }
     }
 
     private fun handleIncomingMessage(message: SignalMessageModel) {
