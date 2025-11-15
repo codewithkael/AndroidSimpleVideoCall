@@ -34,11 +34,9 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         remoteMessage.data.let { data ->
             Log.d("Masoud TAG", "onMessageReceived: $data")
             when (data["type"]) {
-                "incoming_call" -> {
-                    val callId = data["callId"] ?: return
-                    val callerId = data["callerId"] ?: "unknown"
-                    val callerName = data["callerName"] ?: "Unknown"
-                    showIncomingCallNotification(callId, callerId, callerName)
+                "SendCallNotification" -> {
+                    val callerId = data["sender"] ?: "unknown"
+                    showIncomingCallNotification(callerId)
                 }
                 // other types...
             }
@@ -46,47 +44,37 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     }
 
     @SuppressLint("MissingPermission")
-    private fun showIncomingCallNotification(callId: String, callerId: String, callerName: String) {
+    private fun showIncomingCallNotification(callerId: String) {
         createNotificationChannel()
 
-//        // Full-screen intent - opens your incoming call Activity
-//        val fullScreenIntent = Intent(this, IncomingCallActivity::class.java).apply {
-//            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-//            putExtra("callId", callId)
-//            putExtra("callerId", callerId)
-//            putExtra("callerName", callerName)
-//        }
-//        val fullScreenPendingIntent = PendingIntent.getActivity(
-//            this, callId.hashCode(), fullScreenIntent,
-//            PendingIntent.FLAG_UPDATE_CURRENT or getImmutableFlag()
-//        )
-//
         // Accept action (BroadcastReceiver)
-//        val acceptIntent = Intent(this, CallActionReceiver::class.java).apply {
         val acceptIntent = Intent(this, MainActivity::class.java).apply {
-            action = ACTION_ACCEPT
-            putExtra("callId", callId)
             putExtra("callerId", callerId)
+            putExtra("actionType", "accept")   // NEW
+            action = "ACTION_OPEN_CALL"
         }
-        val acceptPending = PendingIntent.getBroadcast(
-            this, callId.hashCode() + 1, acceptIntent,
+
+        val acceptPending = PendingIntent.getActivity(
+            this,
+            callerId.hashCode(),
+            acceptIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or getImmutableFlag()
         )
 
         // Reject action
-        val rejectIntent = Intent(this, MainActivity::class.java).apply {
+        val rejectIntent = Intent(this, CallActionReceiver::class.java).apply {
             action = ACTION_REJECT
-            putExtra("callId", callId)
+
             putExtra("callerId", callerId)
         }
         val rejectPending = PendingIntent.getBroadcast(
-            this, callId.hashCode() + 2, rejectIntent,
+            this, callerId.hashCode() + 2, rejectIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or getImmutableFlag()
         )
 
         val builder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_call) // add icon
-            .setContentTitle("$callerName is calling")
+            .setContentTitle("$callerId is calling")
             .setContentText("Tap to answer")
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_CALL)
@@ -103,7 +91,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         RingtonePlayer.start(this)
 
         with(NotificationManagerCompat.from(this)) {
-            notify(NOTIF_ID + callId.hashCode(), builder.build())
+            notify(NOTIF_ID + callerId.hashCode(), builder.build())
         }
 
         // Optionally set a timeout to auto-decline after N seconds
@@ -111,10 +99,9 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             // if still ringing, auto-reject
             // implement logic to check if call accepted; for brevity, just broadcast reject
             sendBroadcast(Intent(ACTION_REJECT).apply {
-                putExtra("callId", callId)
                 putExtra("callerId", callerId)
             })
-        }, 30000) // 30s timeout
+        }, 10000) // 30s timeout
     }
 
     private fun getImmutableFlag(): Int {

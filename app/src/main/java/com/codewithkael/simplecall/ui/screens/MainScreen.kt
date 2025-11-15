@@ -6,7 +6,6 @@ import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -30,6 +29,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.core.app.NotificationManagerCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.codewithkael.simplecall.R
 import com.codewithkael.simplecall.ui.components.CallComponent
@@ -38,11 +38,12 @@ import com.codewithkael.simplecall.ui.components.WhoToCall
 import com.codewithkael.simplecall.ui.components.YourIdCard
 import com.codewithkael.simplecall.ui.viewmodel.MainViewModel
 import com.codewithkael.simplecall.utils.ConnectionState
+import com.codewithkael.simplecall.utils.MyFirebaseMessagingService
+import com.codewithkael.simplecall.utils.RingtonePlayer
 import com.codewithkael.simplecall.utils.SimpleCallApplication
 
-@RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
-fun MainScreen() {
+fun MainScreen(intent: Intent?) {
     val viewModel: MainViewModel = hiltViewModel()
     val context = LocalContext.current
     val requestPermissionLauncher = rememberLauncherForActivityResult(
@@ -60,8 +61,23 @@ fun MainScreen() {
 
     val connectionStatus = viewModel.connectionState.collectAsState()
 
+    fun handleIncomingIntent(intent: Intent?) {
+        intent ?: return
+
+        val actionType = intent.getStringExtra("actionType")
+        val callerId = intent.getStringExtra("callerId") ?: return
+        if (actionType == "accept") {
+            RingtonePlayer.stop()
+            NotificationManagerCompat.from(context)
+                .cancel(MyFirebaseMessagingService.NOTIF_ID + callerId.hashCode())
+            //notify for accepting the call
+            Toast.makeText(context, "call accepted", Toast.LENGTH_SHORT).show()
+        }
+    }
+
 
     LaunchedEffect(Unit) {
+        handleIncomingIntent(intent)
         val permissions = mutableListOf<String>().apply {
             add(android.Manifest.permission.RECORD_AUDIO)
             add(android.Manifest.permission.CAMERA)
