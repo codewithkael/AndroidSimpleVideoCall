@@ -8,5 +8,5 @@ data class SignalMessageModel(
 )
 
 enum class SignalMessageType {
-    FindUser,UserOnline,UserOffline,StartCall,AcceptCall,RejectCall,Offer,Answer,ICE,EndCall,SendCallNotification
+    FindUser,UserOnline,UserOffline,StartCall,AutoStartCall,AcceptCall,RejectCall,Offer,Answer,ICE,EndCall,UserOfflineWithNotification
 }

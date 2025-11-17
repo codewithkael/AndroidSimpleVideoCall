@@ -11,7 +11,5 @@ class SimpleCallApplication : Application() {
         super.onCreate()
         FirebaseApp.initializeApp(this)
     }
-    companion object {
-        val USER_ID = UUID.randomUUID().toString().substring(0,5)
-    }
+
 }

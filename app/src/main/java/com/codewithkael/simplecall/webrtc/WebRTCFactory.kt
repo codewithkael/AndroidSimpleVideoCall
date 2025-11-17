@@ -3,6 +3,7 @@ package com.codewithkael.simplecall.webrtc
 import android.app.Application
 import android.content.Context
 import com.codewithkael.simplecall.utils.SimpleCallApplication
+import com.codewithkael.simplecall.utils.UserIdHelper
 import com.google.gson.Gson
 import org.webrtc.AudioTrack
 import org.webrtc.Camera2Enumerator
@@ -23,7 +24,8 @@ import javax.inject.Singleton
 
 @Singleton
 class WebRTCFactory @Inject constructor(
-    private val application: Application, private val gson: Gson
+    private val application: Application,
+    private val gson: Gson
 ) {
     private val eglBaseContext = EglBase.create().eglBaseContext
     private val peerConnectionFactory by lazy { createPeerConnectionFactory() }
@@ -32,7 +34,9 @@ class WebRTCFactory @Inject constructor(
     private var localVideoTrack: VideoTrack? = null
     private val localAudioSource by lazy { peerConnectionFactory.createAudioSource(MediaConstraints()) }
     private var localAudioTrack: AudioTrack? = null
-    private val streamId = "${SimpleCallApplication.USER_ID}_stream"
+    private val userID= UserIdHelper(application).getUserId()
+
+    private val streamId = "${userID}_stream"
     private var localStream: MediaStream? = null
 
     //add your turn servers here, if you wanna know how to create it, watch this series :
@@ -145,7 +149,7 @@ class WebRTCFactory @Inject constructor(
             connection?.addStream(it)
         }
         return connection?.let {
-            RTCClientImpl(it,listener,gson)
+            RTCClientImpl(it,listener,gson,application)
         }
     }
 

@@ -8,7 +8,6 @@ import android.content.Intent
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.codewithkael.simplecall.R
@@ -32,9 +31,8 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         remoteMessage.data.let { data ->
-            Log.d("Masoud TAG", "onMessageReceived: $data")
             when (data["type"]) {
-                "SendCallNotification" -> {
+                "FindUser" -> {
                     val callerId = data["sender"] ?: "unknown"
                     showIncomingCallNotification(callerId)
                 }

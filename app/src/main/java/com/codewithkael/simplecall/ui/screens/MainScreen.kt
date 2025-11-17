@@ -41,6 +41,7 @@ import com.codewithkael.simplecall.utils.ConnectionState
 import com.codewithkael.simplecall.utils.MyFirebaseMessagingService
 import com.codewithkael.simplecall.utils.RingtonePlayer
 import com.codewithkael.simplecall.utils.SimpleCallApplication
+import com.codewithkael.simplecall.utils.UserIdHelper
 
 @Composable
 fun MainScreen(intent: Intent?) {
@@ -71,7 +72,7 @@ fun MainScreen(intent: Intent?) {
             NotificationManagerCompat.from(context)
                 .cancel(MyFirebaseMessagingService.NOTIF_ID + callerId.hashCode())
             //notify for accepting the call
-            Toast.makeText(context, "call accepted", Toast.LENGTH_SHORT).show()
+            viewModel.findUserWithDelay(callerId)
         }
     }
 
@@ -147,7 +148,7 @@ fun MainScreen(intent: Intent?) {
                         textAlign = TextAlign.Center,
                         style = MaterialTheme.typography.labelLarge
                     )
-                    YourIdCard(userId = SimpleCallApplication.USER_ID) {
+                    YourIdCard(userId = UserIdHelper(context).getUserId()) {
                         Toast.makeText(context, "User ID Copied to clipboard", Toast.LENGTH_SHORT)
                             .show()
                     }

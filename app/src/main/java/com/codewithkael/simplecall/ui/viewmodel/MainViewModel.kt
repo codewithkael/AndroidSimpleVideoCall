@@ -9,6 +9,7 @@ import com.codewithkael.simplecall.remote.socket.SignalMessageModel
 import com.codewithkael.simplecall.remote.socket.SignalMessageType
 import com.codewithkael.simplecall.remote.socket.SignalMessageType.AcceptCall
 import com.codewithkael.simplecall.remote.socket.SignalMessageType.Answer
+import com.codewithkael.simplecall.remote.socket.SignalMessageType.AutoStartCall
 import com.codewithkael.simplecall.remote.socket.SignalMessageType.EndCall
 import com.codewithkael.simplecall.remote.socket.SignalMessageType.ICE
 import com.codewithkael.simplecall.remote.socket.SignalMessageType.Offer
@@ -23,7 +24,7 @@ import com.codewithkael.simplecall.utils.ConnectionState.WaitingForCall
 import com.codewithkael.simplecall.utils.Constants.TIME_OUT_DURATION_MS
 import com.codewithkael.simplecall.utils.Constants.getWebSocketUrl
 import com.codewithkael.simplecall.utils.SignallingClient
-import com.codewithkael.simplecall.utils.SimpleCallApplication
+import com.codewithkael.simplecall.utils.UserIdHelper
 import com.codewithkael.simplecall.webrtc.MyPeerObserver
 import com.codewithkael.simplecall.webrtc.RTCAudioManager
 import com.codewithkael.simplecall.webrtc.RTCClient
@@ -53,14 +54,14 @@ class MainViewModel @Inject constructor(
     private val signalSender: SignallingClient,
     private val webrtcFactory: WebRTCFactory,
     private val gson :Gson,
-    application: Application
+    private val application: Application
 ) : ViewModel() {
 
     var connectionState: MutableStateFlow<ConnectionState> = MutableStateFlow(New)
     private fun setConnectionState(state: ConnectionState) {
         connectionState.value = state
     }
-
+    private val userID= UserIdHelper(application).getUserId()
     val eventState: MutableSharedFlow<String> = MutableSharedFlow(replay = 0)
     private var target: String = ""
     private var callTimeoutJob: Job? = null
@@ -80,7 +81,7 @@ class MainViewModel @Inject constructor(
                 // send token to your server
                 CoroutineScope(Dispatchers.IO).launch {
                     try {
-                        socketClient.init(getWebSocketUrl(username = SimpleCallApplication.USER_ID,token=token),
+                        socketClient.init(getWebSocketUrl(username = userID,token=token),
                             object : SocketClient.SocketCallback {
                                 override fun onRemoteSocketClientOpened() {
                                     setConnectionState(WaitingForCall)
@@ -107,13 +108,21 @@ class MainViewModel @Inject constructor(
             UserOnline -> handleUserOnline(message)
             SignalMessageType.UserOffline -> handleUserOffline(message)
             StartCall -> handleStartCall(message)
+            AutoStartCall -> acceptIncomingCall(message.sender)
             AcceptCall -> handleAcceptCall(message)
             RejectCall -> handleRejectCall()
             Offer -> handleOffer(message)
             Answer -> handleAnswer(message)
             ICE -> handleICE(message)
             EndCall -> handleEndCall()
+            SignalMessageType.UserOfflineWithNotification -> handleUserOfflineWithNotification()
             else -> {}
+        }
+    }
+
+    private fun handleUserOfflineWithNotification() {
+        viewModelScope.launch {
+            eventState.emit("Waiting For Opponent")
         }
     }
 
@@ -192,7 +201,7 @@ class MainViewModel @Inject constructor(
     }
 
     fun findUser(target: String) {
-        if (target == SimpleCallApplication.USER_ID) {
+        if (target == userID) {
             viewModelScope.launch {
                 eventState.emit("You cannot call yourself")
             }
@@ -201,6 +210,22 @@ class MainViewModel @Inject constructor(
         setConnectionState(WaitingForCall)
         //send signal to the server
         signalSender.findUser(target)
+    }
+
+    fun findUserWithDelay(target: String) {
+        if (target == userID) {
+            viewModelScope.launch {
+                eventState.emit("You cannot call yourself")
+            }
+            return
+        }
+        this.target = target
+        setConnectionState(WaitingForCall)
+        //send signal to the server
+        viewModelScope.launch {
+            delay(500)
+            signalSender.sendAutoStartCallSignal(target)
+        }
     }
 
     fun incomingCallDismissed() {

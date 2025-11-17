@@ -1,8 +1,10 @@
 package com.codewithkael.simplecall.webrtc
 
+import android.app.Application
 import com.codewithkael.simplecall.remote.socket.SignalMessageModel
 import com.codewithkael.simplecall.remote.socket.SignalMessageType
 import com.codewithkael.simplecall.utils.SimpleCallApplication
+import com.codewithkael.simplecall.utils.UserIdHelper
 import com.google.gson.Gson
 import org.webrtc.IceCandidate
 import org.webrtc.MediaConstraints
@@ -12,8 +14,11 @@ import org.webrtc.SessionDescription
 class RTCClientImpl(
     connection: PeerConnection,
     private val transferListener:TransferDataToServerCallBack,
-    private val gson:Gson
+    private val gson:Gson,
+    private val application: Application
 ) : RTCClient {
+    private val userID= UserIdHelper(application).getUserId()
+
     private val mediaConstraints = MediaConstraints().apply {
         mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveVideo","true"))
         mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveAudio","true"))
@@ -35,7 +40,7 @@ class RTCClientImpl(
                 transferListener.onTransferEventToSocket(
                     SignalMessageModel(
                         type = SignalMessageType.Offer,
-                        sender = SimpleCallApplication.USER_ID,
+                        sender = userID,
                         target = target,
                         data = desc?.description
                     )
@@ -52,7 +57,7 @@ class RTCClientImpl(
                 transferListener.onTransferEventToSocket(
                     SignalMessageModel(
                         type= SignalMessageType.Answer,
-                        sender = SimpleCallApplication.USER_ID,
+                        sender = userID,
                         target = target,
                         data = desc?.description
                     )
@@ -74,7 +79,7 @@ class RTCClientImpl(
         transferListener.onTransferEventToSocket(
             SignalMessageModel(
                 type = SignalMessageType.ICE,
-                sender = SimpleCallApplication.USER_ID,
+                sender = userID,
                 target = target,
                 data = gson.toJson(iceCandidate)
             )
